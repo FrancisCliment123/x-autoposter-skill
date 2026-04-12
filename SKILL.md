@@ -1,7 +1,7 @@
 ---
 name: x-autoposter
-version: "1.0.0"
-description: "Post tweets, threads, and replies on X (Twitter) using the official API v2. Read mentions, replies, and engagement data. TRIGGER: tweet, post on x, post on twitter, x api, twitter api, reply tweet, mentions, thread."
+version: "2.0.0"
+description: "Post tweets, threads, replies, and quote tweets on X (Twitter) using the official API v2. Read mentions, replies, timeline, top-performing tweets, search tweets, and full engagement analytics. Delete tweets. TRIGGER: tweet, post on x, post on twitter, x api, twitter api, reply tweet, quote tweet, mentions, thread, analytics, top tweets, search twitter, delete tweet."
 argument-hint: 'x-autoposter "Your tweet text here"'
 allowed-tools: Bash, Read, Write
 user-invocable: true
@@ -71,6 +71,18 @@ node ~/.claude/skills/x-autoposter/scripts/post.js --thread "First tweet" "Secon
 node ~/.claude/skills/x-autoposter/scripts/post.js "Your reply" --reply-to <tweet_id>
 ```
 
+### Quote tweet
+
+```bash
+node ~/.claude/skills/x-autoposter/scripts/post.js "My take on this" --quote <tweet_id>
+```
+
+### Delete a tweet
+
+```bash
+node ~/.claude/skills/x-autoposter/scripts/post.js --delete <tweet_id>
+```
+
 **IMPORTANT:** Always show the user the exact tweet text before posting. Never post automatically without explicit approval.
 
 ## 2. Read mentions & replies: `mentions.js`
@@ -114,7 +126,36 @@ Returns JSON with:
 4. User approves each reply before sending
 ```
 
-## 3. Growth guide: `GROWTH-GUIDE.md`
+## 3. Analytics: `analytics.js`
+
+```bash
+# Your last 20 tweets with metrics
+node ~/.claude/skills/x-autoposter/scripts/analytics.js
+
+# Your top 10 tweets by engagement score
+node ~/.claude/skills/x-autoposter/scripts/analytics.js --top 10
+
+# Last 50 of your tweets
+node ~/.claude/skills/x-autoposter/scripts/analytics.js --count 50
+
+# Search public tweets
+node ~/.claude/skills/x-autoposter/scripts/analytics.js --search "AI fintech"
+
+# Analyze another user's tweets
+node ~/.claude/skills/x-autoposter/scripts/analytics.js --user elonmusk --count 20
+
+# Your profile stats
+node ~/.claude/skills/x-autoposter/scripts/analytics.js --profile
+```
+
+Returns:
+- `user`: username, followers, following
+- `summary`: total/avg likes, replies, retweets, impressions, bookmarks, best tweet
+- `tweets[]`: each tweet with full metrics + `engagement_score` (weighted: retweets×20, replies×13.5, bookmarks×10, likes×1, impressions×0.001)
+
+The **engagement_score** mirrors X's algorithm formula so you can see which content the algorithm actually rewards, not just what got the most likes.
+
+## 4. Growth guide: `GROWTH-GUIDE.md`
 
 See [GROWTH-GUIDE.md](GROWTH-GUIDE.md) for the full X/Twitter growth playbook — covering the algorithm scoring formula, posting strategy, content mix, hook formulas, link strategy (never put links in tweet body), engagement tactics, automation safety, and how to promote WealthMaia without being salesy. When drafting tweets, always follow this guide.
 

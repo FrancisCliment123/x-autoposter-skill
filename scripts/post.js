@@ -6,8 +6,10 @@
  * Usage:
  *   node post.js "Your tweet text"
  *   node post.js "Tweet text" --reply-to <tweet_id>
+ *   node post.js "My take on this" --quote <tweet_id>
  *   node post.js --thread "First tweet" "Second tweet" "Third tweet"
  *   node post.js "Tweet with image" --media path/to/image.jpg
+ *   node post.js --delete <tweet_id>
  *
  * Requires .env file in the skill directory with:
  *   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET
@@ -68,6 +70,8 @@ async function main() {
   // Parse args
   let isThread = false;
   let replyTo = null;
+  let quoteOf = null;
+  let deleteId = null;
   let mediaPath = null;
   const texts = [];
 
@@ -77,11 +81,38 @@ async function main() {
     } else if (args[i] === '--reply-to' && args[i + 1]) {
       replyTo = args[i + 1];
       i++;
+    } else if (args[i] === '--quote' && args[i + 1]) {
+      quoteOf = args[i + 1];
+      i++;
+    } else if (args[i] === '--delete' && args[i + 1]) {
+      deleteId = args[i + 1];
+      i++;
     } else if (args[i] === '--media' && args[i + 1]) {
       mediaPath = args[i + 1];
       i++;
     } else {
       texts.push(args[i]);
+    }
+  }
+
+  // Delete mode (no text needed)
+  if (deleteId) {
+    try {
+      console.log(`Deleting tweet ${deleteId}...`);
+      const result = await client.v2.deleteTweet(deleteId);
+      console.log('');
+      console.log(JSON.stringify({
+        success: true,
+        type: 'delete',
+        deleted_id: deleteId,
+        deleted: result.data.deleted,
+        timestamp: new Date().toISOString(),
+      }, null, 2));
+      return;
+    } catch (err) {
+      if (err.data) console.error('X API Error:', JSON.stringify(err.data, null, 2));
+      else console.error('Error:', err.message);
+      process.exit(1);
     }
   }
 
@@ -124,6 +155,9 @@ async function main() {
     if (replyTo) {
       payload.reply = { in_reply_to_tweet_id: replyTo };
       console.log(`Replying to tweet ${replyTo}...`);
+    } else if (quoteOf) {
+      payload.quote_tweet_id = quoteOf;
+      console.log(`Quote tweeting ${quoteOf}...`);
     } else {
       console.log('Posting tweet...');
     }
@@ -133,11 +167,12 @@ async function main() {
     console.log('');
     console.log(JSON.stringify({
       success: true,
-      type: replyTo ? 'reply' : 'tweet',
+      type: replyTo ? 'reply' : quoteOf ? 'quote' : 'tweet',
       id: result.data.id,
       text: tweetText,
       url: `https://x.com/i/status/${result.data.id}`,
       reply_to: replyTo || null,
+      quote_of: quoteOf || null,
       has_media: !!mediaPath,
       timestamp: new Date().toISOString(),
     }, null, 2));
